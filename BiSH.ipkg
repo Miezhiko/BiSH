@@ -1,0 +1,6 @@
+package BiSH
+
+modules = BiSH
+
+executable = BiSH
+main = BiSH
