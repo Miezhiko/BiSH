@@ -1,6 +1,8 @@
 package BiSH
 
-modules = BiSH
+modules = Types, BiSH
+
+depends = contrib
 
 executable = BiSH
 main = BiSH
