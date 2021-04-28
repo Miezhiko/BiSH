@@ -17,10 +17,10 @@ import System.Directory.Tree
 catPosts : List (String, Either FileError String) -> List (String, String)
 catPosts = catMaybes . map ((\(x, y) => map (x,) y) . mapSnd eitherToMaybe)
 
-getPosts : IO (List Post)
+getPosts : IO (String, (List Post))
 getPosts = do
   Just cwd <- currentDir
-    | Nothing => pure []
+    | Nothing => pure ("",[])
   let path : String = cwd ++ (Strings.singleton dirSeparator) ++ "posts"
   putStrLn $ "loading posts from: " ++ path ++ "\n"
   entriesTree <- explore $ parse path
@@ -29,15 +29,20 @@ getPosts = do
   postsF <- traverse readFile paths
   let postsWithFnames = zip entries postsF
       posts = map post $ catPosts postsWithFnames
-  pure posts
+  pure (cwd, posts)
 
-doPost : (List Post) -> IO ()
-doPost [] = putStrLn "No posts"
-doPost posts = do
-  for_ posts $ \p => putStrLn $ encode p
+doPost : String -> (List Post) -> IO ()
+doPost _ [] = putStrLn "No posts"
+doPost cwd posts = do
+  let root = cwd ++ (Strings.singleton dirSeparator) ++ "static" ++ (Strings.singleton dirSeparator)
+  for_ posts $ \p => do
+    let newTitle = root ++ p.title ++ ".html"
+    let json = encode p
+    succ <- writeFile newTitle json
+    putStrLn json
 
 main : IO ()
 main = do
   args <- getArgs
-  posts <- getPosts
-  doPost posts
+  (cwd, posts) <- getPosts
+  doPost cwd posts
