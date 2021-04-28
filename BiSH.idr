@@ -21,6 +21,9 @@ getEntries d
          ds <- assert_total $ getEntries d
          pure (f :: ds)
 
+catPosts : List (String, Either FileError String) -> List (String, String)
+catPosts = catMaybes . map ((\(x, y) => map (x,) y) . mapSnd eitherToMaybe)
+
 getPosts : IO (List Post)
 getPosts = do
   Just cwd <- currentDir
@@ -35,8 +38,8 @@ getPosts = do
                          && x /= "..") entries
   let paths = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) files
   postsF <- traverse readFile paths
-  let postsWithFnames = zip files $ rights postsF
-  let posts = map post postsWithFnames
+  let postsWithFnames = zip files postsF --$ rights postsF
+  let posts = map post $ catPosts postsWithFnames
   pure posts
 
 doPost : (List Post) -> IO ()
