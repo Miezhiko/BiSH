@@ -3,7 +3,6 @@ module BiSH
 import Types
 
 import JSON
-import Generics.Derive
 
 import Data.Either
 import Data.List
@@ -13,13 +12,7 @@ import System
 import System.Path
 import System.File
 import System.Directory
-
-getEntries : Directory -> IO (List String)
-getEntries d
-    = do Right f <- dirEntry d
-             | Left err => pure []
-         ds <- assert_total $ getEntries d
-         pure (f :: ds)
+import System.Directory.Tree
 
 catPosts : List (String, Either FileError String) -> List (String, String)
 catPosts = catMaybes . map ((\(x, y) => map (x,) y) . mapSnd eitherToMaybe)
@@ -30,10 +23,8 @@ getPosts = do
     | Nothing => pure []
   let path : String = cwd ++ (Strings.singleton dirSeparator) ++ "posts"
   putStrLn $ "loading posts from: " ++ path ++ "\n"
-  Right dir <- openDir path
-    | Left err => pure []
-  entries <- getEntries dir
-  closeDir dir
+  entriesTree <- explore $ parse path
+  let entries = map fileName entriesTree.files
   let files = filter (\x => x /= "."
                          && x /= "..") entries
   let paths = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) files
