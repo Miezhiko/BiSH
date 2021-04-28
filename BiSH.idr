@@ -25,12 +25,10 @@ getPosts = do
   putStrLn $ "loading posts from: " ++ path ++ "\n"
   entriesTree <- explore $ parse path
   let entries = map fileName entriesTree.files
-  let files = filter (\x => x /= "."
-                         && x /= "..") entries
-  let paths = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) files
+      paths   = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) entries
   postsF <- traverse readFile paths
-  let postsWithFnames = zip files postsF --$ rights postsF
-  let posts = map post $ catPosts postsWithFnames
+  let postsWithFnames = zip entries postsF
+      posts = map post $ catPosts postsWithFnames
   pure posts
 
 doPost : (List Post) -> IO ()
