@@ -2,6 +2,10 @@ module BiSH
 
 import Types
 
+import JSON
+import Generics.Derive
+
+import Data.Either
 import Data.List
 import Data.Strings
 
@@ -29,13 +33,16 @@ getPosts = do
   closeDir dir
   let files = filter (\x => x /= "."
                          && x /= "..") entries
-  let posts = map post files
+  let paths = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) files
+  postsF <- traverse readFile paths
+  let postsWithFnames = zip files $ rights postsF
+  let posts = map post postsWithFnames
   pure posts
 
 doPost : (List Post) -> IO ()
 doPost [] = putStrLn "No posts"
 doPost posts = do
-  for_ posts $ \p => putStrLn p.text
+  for_ posts $ \p => putStrLn $ encode p
 
 main : IO ()
 main = do
