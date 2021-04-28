@@ -31,9 +31,9 @@ getPosts = do
       posts = map post $ catPosts postsWithFnames
   pure (cwd, posts)
 
-doPost : String -> (List Post) -> IO ()
-doPost _ [] = putStrLn "No posts"
-doPost cwd posts = do
+doPost : (String, (List Post)) -> IO ()
+doPost (_,[]) = putStrLn "No posts"
+doPost (cwd,posts) = do
   let root = cwd ++ (Strings.singleton dirSeparator) ++ "static" ++ (Strings.singleton dirSeparator)
   for_ posts $ \p => do
     let newTitle = root ++ p.title ++ ".html"
@@ -42,7 +42,4 @@ doPost cwd posts = do
     putStrLn json
 
 main : IO ()
-main = do
-  args <- getArgs
-  (cwd, posts) <- getPosts
-  doPost cwd posts
+main = getPosts >>= doPost
