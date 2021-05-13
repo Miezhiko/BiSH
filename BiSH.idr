@@ -41,25 +41,38 @@ getTemplates cwd = do
       templates = map template $ catFF templatesWithFnames
   pure templates
 
+unzipTemplate : Template -> (Maybe Template, Maybe Template, Maybe Template)
+unzipTemplate t =
+  case t.type of
+    IndexTemplate => (Just(t), Nothing, Nothing)
+    PostTemplate  => (Nothing, Just(t), Nothing)
+    HBS           => (Nothing, Nothing, Just(t))
+    Unknown       => (Nothing, Nothing, Nothing)
+
 generate : String -> (List Post) -> (List Template) -> IO ()
 generate _ [] _ = putStrLn "No posts"
 generate _ _ [] = putStrLn "No templates"
 generate cwd posts templates = do
-  -- let root = cwd ++ (Strings.singleton dirSeparator) ++ "static" ++ (Strings.singleton dirSeparator)
   let root = cwd ++ (Strings.singleton dirSeparator)
-  for_ templates $ \t => do
-    case t.type of
-      HBS => do
-        putStrLn $ "processing HBS: " ++ t.fname
-        --TODO: process posts
-        succ <- writeFile t.fname t.text
-        pure ()
-      Unknown => putStrLn $ "skipping unknown template " ++ t.fname
-  --for_ posts $ \p => do
-  --  let newTitle = root ++ p.title ++ ".html"
-  --  let json = encode p
-  --  succ <- writeFile newTitle json
-  --  putStrLn json
+  let (indexes, posts, other) = unzipWith3 unzipTemplate templates
+
+  case (catMaybes indexes) of
+    [] => putStrLn "Missing index template"
+    i::xs => do
+      putStrLn $ "processing Index: " ++ i.fname
+      let px = map (\p => p.text) (catMaybes posts)
+      let pt = unlines px
+      -- TODO: need to write replace =_=
+      -- let pr = replace "{{ posts }}" pt i.text
+      succ <- writeFile i.fname i.text
+      pure ()
+
+  for_ (catMaybes other) $ \t => do
+    putStrLn $ "processing HBS: " ++ t.fname
+    -- let json = encode t
+    succ <- writeFile t.fname t.text
+    pure ()
+
   putStrLn "complete"
 
 main : IO ()
