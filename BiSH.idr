@@ -51,13 +51,13 @@ unzipTemplate t =
 
 strReplace : (what : String) -> (with_ : String) -> (in_ : String) -> String
 strReplace what with_ in_ = pack $ inner (unpack what) (unpack with_) (unpack in_)
-    where
-        inner : List Char -> List Char -> List Char -> List Char
-        inner [] ys zs = zs
-        inner _ ys [] = []
-        inner xs ys (z::zs) = if isPrefixOf xs (z::zs)
-            then ys ++ inner xs ys (drop (length xs) (z::zs))
-            else z :: inner xs ys zs
+  where
+    inner : List Char -> List Char -> List Char -> List Char
+    inner [] ys zs = zs
+    inner _ ys [] = []
+    inner xs ys (z::zs) = if isPrefixOf xs (z::zs)
+      then ys ++ inner xs ys (drop (length xs) (z::zs))
+      else z :: inner xs ys zs
 
 generatePosts: (List (Maybe Template)) -> (List Post) -> String
 generatePosts postTemplates posts = do
@@ -79,10 +79,10 @@ generate cwd posts templates = do
   case (catMaybes indexes) of
     [] => putStrLn "Missing index template"
     i::xs => do
-
       putStrLn $ "processing Index: " ++ i.fname
+      -- TODO: store posts to separated html files too
       let postsString = generatePosts postTemplates posts
-      let pr = strReplace "{{ posts }}" postsString i.text
+          pr = strReplace "{{ posts }}" postsString i.text
       succ <- writeFile i.fname pr
       pure ()
 
