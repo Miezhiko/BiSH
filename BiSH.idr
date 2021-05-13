@@ -49,22 +49,41 @@ unzipTemplate t =
     HBS           => (Nothing, Nothing, Just(t))
     Unknown       => (Nothing, Nothing, Nothing)
 
+strReplace : (what : String) -> (with_ : String) -> (in_ : String) -> String
+strReplace what with_ in_ = pack $ inner (unpack what) (unpack with_) (unpack in_)
+    where
+        inner : List Char -> List Char -> List Char -> List Char
+        inner [] ys zs = zs
+        inner _ ys [] = []
+        inner xs ys (z::zs) = if isPrefixOf xs (z::zs)
+            then ys ++ inner xs ys (drop (length xs) (z::zs))
+            else z :: inner xs ys zs
+
+generatePosts: (List (Maybe Template)) -> (List Post) -> String
+generatePosts postTemplates posts = do
+  case (catMaybes postTemplates) of
+    [] => ""
+    pt::xs =>
+      let px = map (\p => do
+        let tit = strReplace "{{ fname }}" p.title pt.text
+        strReplace "{{ text }}" p.text tit) posts
+      in unlines px
+
 generate : String -> (List Post) -> (List Template) -> IO ()
 generate _ [] _ = putStrLn "No posts"
 generate _ _ [] = putStrLn "No templates"
 generate cwd posts templates = do
   let root = cwd ++ (Strings.singleton dirSeparator)
-  let (indexes, posts, other) = unzipWith3 unzipTemplate templates
+  let (indexes, postTemplates, other) = unzipWith3 unzipTemplate templates
 
   case (catMaybes indexes) of
     [] => putStrLn "Missing index template"
     i::xs => do
+
       putStrLn $ "processing Index: " ++ i.fname
-      let px = map (\p => p.text) (catMaybes posts)
-      let pt = unlines px
-      -- TODO: need to write replace =_=
-      -- let pr = replace "{{ posts }}" pt i.text
-      succ <- writeFile i.fname i.text
+      let postsString = generatePosts postTemplates posts
+      let pr = strReplace "{{ posts }}" postsString i.text
+      succ <- writeFile i.fname pr
       pure ()
 
   for_ (catMaybes other) $ \t => do
