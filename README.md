@@ -1,4 +1,11 @@
 # BiSH
 Static web blog generator
 
-# Work in progress
+# DONE
+
+ - simple/stupid template engine
+ - generate separated pages for each article
+
+# TODO
+ - markdown processing
+ - better default template
