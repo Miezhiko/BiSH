@@ -28,7 +28,7 @@ post (fn, ft) =
   MkPost fn ft "" Article
 
 public export
-data TemplateType = IndexTemplate | PostTemplate | HBS | Unknown
+data TemplateType = IndexTemplate | PostTemplate | ArticleTemplate | Unknown
 
 %runElab derive "TemplateType" [Generic,Meta,Show,Eq,EnumToJSON,EnumFromJSON]
 
@@ -45,9 +45,7 @@ export
 template : (String, String) -> Template
 template (fn, ft) =
   case fn of
-    "index.html.hbs" => MkTemplate "index.html" ft IndexTemplate
-    "post.html.hbs" => MkTemplate "" ft PostTemplate
-    _ => if isSuffixOf ".hbs" fn then
-            let newFn = dropLast 4 fn
-            in MkTemplate newFn ft HBS
-          else MkTemplate fn ft Unknown
+    "index.html.hbs"    => MkTemplate "index.html" ft IndexTemplate
+    "post.html.hbs"     => MkTemplate "" ft PostTemplate
+    "article.html.hbs"  => MkTemplate "" ft ArticleTemplate
+    _                   => MkTemplate fn ft Unknown

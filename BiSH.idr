@@ -44,10 +44,10 @@ getTemplates cwd = do
 unzipTemplate : Template -> (Maybe Template, Maybe Template, Maybe Template)
 unzipTemplate t =
   case t.type of
-    IndexTemplate => (Just(t), Nothing, Nothing)
-    PostTemplate  => (Nothing, Just(t), Nothing)
-    HBS           => (Nothing, Nothing, Just(t))
-    Unknown       => (Nothing, Nothing, Nothing)
+    IndexTemplate   => (Just(t), Nothing, Nothing)
+    PostTemplate    => (Nothing, Just(t), Nothing)
+    ArticleTemplate => (Nothing, Nothing, Just(t))
+    Unknown         => (Nothing, Nothing, Nothing)
 
 strReplace : (what : String) -> (with_ : String) -> (in_ : String) -> String
 strReplace what with_ in_ = pack $ inner (unpack what) (unpack with_) (unpack in_)
@@ -59,8 +59,8 @@ strReplace what with_ in_ = pack $ inner (unpack what) (unpack with_) (unpack in
       then ys ++ inner xs ys (drop (length xs) (z::zs))
       else z :: inner xs ys zs
 
-generatePosts: (List (Maybe Template)) -> (List Post) -> String
-generatePosts postTemplates posts = do
+generatePostsTitles: (List (Maybe Template)) -> (List Post) -> String
+generatePostsTitles postTemplates posts = do
   case (catMaybes postTemplates) of
     [] => ""
     pt::xs =>
@@ -69,28 +69,35 @@ generatePosts postTemplates posts = do
         strReplace "{{ text }}" p.text tit) posts
       in unlines px
 
+generatePosts: (List (Maybe Template)) -> (List Post) -> IO ()
+generatePosts articleTemplates posts = do
+  case (catMaybes articleTemplates) of
+    [] => pure ()
+    pt::xs =>
+      for_ posts $ \p => do
+        let tit = strReplace "{{ fname }}" p.title pt.text
+        let px = strReplace "{{ text }}" p.text tit
+        let genFname = p.title ++ ".html"
+        succ <- writeFile genFname px
+        pure ()
+
 generate : String -> (List Post) -> (List Template) -> IO ()
 generate _ [] _ = putStrLn "No posts"
 generate _ _ [] = putStrLn "No templates"
 generate cwd posts templates = do
   let root = cwd ++ (Strings.singleton dirSeparator)
-  let (indexes, postTemplates, other) = unzipWith3 unzipTemplate templates
+  let (indexes, postTemplates, articleTemplates) = unzipWith3 unzipTemplate templates
+
+  generatePosts articleTemplates posts
 
   case (catMaybes indexes) of
     [] => putStrLn "Missing index template"
     i::xs => do
       putStrLn $ "processing Index: " ++ i.fname
-      -- TODO: store posts to separated html files too
-      let postsString = generatePosts postTemplates posts
+      let postsString = generatePostsTitles postTemplates posts
           pr = strReplace "{{ posts }}" postsString i.text
       succ <- writeFile i.fname pr
       pure ()
-
-  for_ (catMaybes other) $ \t => do
-    putStrLn $ "processing HBS: " ++ t.fname
-    -- let json = encode t
-    succ <- writeFile t.fname t.text
-    pure ()
 
   putStrLn "complete"
 
