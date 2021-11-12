@@ -1,7 +1,7 @@
 module Types
 
-import JSON
-import Generics.Derive
+-- import JSON
+-- import Generics.Derive
 
 %language ElabReflection
 
@@ -10,7 +10,7 @@ import Generics.Derive
 export
 data PostType = Article | Other
 
-%runElab derive "PostType" [Generic,Meta,Show,Eq,EnumToJSON,EnumFromJSON]
+-- %runElab derive "PostType" [Generic,Meta,Show,Eq,EnumToJSON,EnumFromJSON]
 
 public export
 record Post where
@@ -20,7 +20,7 @@ record Post where
   date  : String
   type  : PostType
 
-%runElab derive "Post" [Generic,Meta,Show,Eq,RecordToJSON,RecordFromJSON]
+-- %runElab derive "Post" [Generic,Meta,Show,Eq,RecordToJSON,RecordFromJSON]
 
 export
 post : (String, String) -> Post
@@ -30,7 +30,7 @@ post (fn, ft) =
 public export
 data TemplateType = IndexTemplate | PostTemplate | ArticleTemplate | Unknown
 
-%runElab derive "TemplateType" [Generic,Meta,Show,Eq,EnumToJSON,EnumFromJSON]
+-- %runElab derive "TemplateType" [Generic,Meta,Show,Eq,EnumToJSON,EnumFromJSON]
 
 public export
 record Template where
@@ -39,7 +39,7 @@ record Template where
   text  : String
   type  : TemplateType
 
-%runElab derive "Template" [Generic,Meta,Show,Eq,RecordToJSON,RecordFromJSON]
+-- %runElab derive "Template" [Generic,Meta,Show,Eq,RecordToJSON,RecordFromJSON]
 
 export
 template : (String, String) -> Template

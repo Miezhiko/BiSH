@@ -2,7 +2,8 @@ package BiSH
 
 modules = Types, BiSH
 
-depends = contrib, json, sop, elab-util
+depends = contrib
+-- depends = contrib, json, sop, elab-util
 
 executable = BiSH
 main = BiSH

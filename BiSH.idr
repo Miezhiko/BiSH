@@ -2,11 +2,9 @@ module BiSH
 
 import Types
 
-import JSON
-
 import Data.Either
 import Data.List
-import Data.Strings
+import Data.String
 
 import System
 import System.Path
@@ -19,11 +17,11 @@ catFF = catMaybes . map ((\(x, y) => map (x,) y) . mapSnd eitherToMaybe)
 
 getPosts : String -> IO (List Post)
 getPosts cwd = do
-  let path : String = cwd ++ (Strings.singleton dirSeparator) ++ "posts"
+  let path : String = cwd ++ (String.singleton dirSeparator) ++ "posts"
   putStrLn $ "loading posts from: " ++ path
   entriesTree <- explore $ parse path
   let entries = map fileName entriesTree.files
-      paths   = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) entries
+      paths   = map (\x => path ++ (String.singleton dirSeparator) ++ x) entries
   postsF <- traverse readFile paths
   let postsWithFnames = zip entries postsF
       posts = map post $ catFF postsWithFnames
@@ -31,11 +29,11 @@ getPosts cwd = do
 
 getTemplates : String -> IO (List Template)
 getTemplates cwd = do
-  let path : String = cwd ++ (Strings.singleton dirSeparator) ++ "templates"
+  let path : String = cwd ++ (String.singleton dirSeparator) ++ "templates"
   putStrLn $ "loading templates from: " ++ path ++ "\n"
   entriesTree <- explore $ parse path
   let entries = map fileName entriesTree.files
-      paths   = map (\x => path ++ (Strings.singleton dirSeparator) ++ x) entries
+      paths   = map (\x => path ++ (String.singleton dirSeparator) ++ x) entries
   templatesF <- traverse readFile paths
   let templatesWithFnames = zip entries templatesF
       templates = map template $ catFF templatesWithFnames
@@ -85,7 +83,7 @@ generate : String -> (List Post) -> (List Template) -> IO ()
 generate _ [] _ = putStrLn "No posts"
 generate _ _ [] = putStrLn "No templates"
 generate cwd posts templates = do
-  let root = cwd ++ (Strings.singleton dirSeparator)
+  let root = cwd ++ (String.singleton dirSeparator)
   let (indexes, postTemplates, articleTemplates) = unzipWith3 unzipTemplate templates
 
   generatePosts articleTemplates posts
