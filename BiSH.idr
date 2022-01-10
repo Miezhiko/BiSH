@@ -1,8 +1,9 @@
 module BiSH
 
 import Types
+import Utils
+import Parser
 
-import Data.Either
 import Data.List
 import Data.String
 
@@ -10,52 +11,18 @@ import System
 import System.Path
 import System.File
 import System.Directory
-import System.Directory.Tree
 
-catFF : List (String, Either FileError String) -> List (String, String)
-catFF = catMaybes . map ((\(x, y) => map (x,) y) . mapSnd eitherToMaybe)
-
-getPosts : String -> IO (List Post)
-getPosts cwd = do
-  let path : String = cwd ++ (String.singleton dirSeparator) ++ "posts"
-  putStrLn $ "loading posts from: " ++ path
-  entriesTree <- explore $ parse path
-  let entries = map fileName entriesTree.files
-      paths   = map (\x => path ++ (String.singleton dirSeparator) ++ x) entries
-  postsF <- traverse readFile paths
-  let postsWithFnames = zip entries postsF
-      posts = map post $ catFF postsWithFnames
-  pure posts
-
-getTemplates : String -> IO (List Template)
-getTemplates cwd = do
-  let path : String = cwd ++ (String.singleton dirSeparator) ++ "templates"
-  putStrLn $ "loading templates from: " ++ path ++ "\n"
-  entriesTree <- explore $ parse path
-  let entries = map fileName entriesTree.files
-      paths   = map (\x => path ++ (String.singleton dirSeparator) ++ x) entries
-  templatesF <- traverse readFile paths
-  let templatesWithFnames = zip entries templatesF
-      templates = map template $ catFF templatesWithFnames
-  pure templates
-
-unzipTemplate : Template -> (Maybe Template, Maybe Template, Maybe Template)
+-- TODO: ugly function but I don't know how to do it properly
+unzipTemplate : Template -> ( Maybe Template
+                            , Maybe Template
+                            , Maybe Template
+                            , Maybe Template )
 unzipTemplate t =
   case t.type of
-    IndexTemplate   => (Just(t), Nothing, Nothing)
-    PostTemplate    => (Nothing, Just(t), Nothing)
-    ArticleTemplate => (Nothing, Nothing, Just(t))
-    Unknown         => (Nothing, Nothing, Nothing)
-
-strReplace : (what : String) -> (with_ : String) -> (in_ : String) -> String
-strReplace what with_ in_ = pack $ inner (unpack what) (unpack with_) (unpack in_)
-  where
-    inner : List Char -> List Char -> List Char -> List Char
-    inner [] ys zs = zs
-    inner _ ys [] = []
-    inner xs ys (z::zs) = if isPrefixOf xs (z::zs)
-      then ys ++ inner xs ys (drop (length xs) (z::zs))
-      else z :: inner xs ys zs
+    IndexTemplate   => ( Just(t), Nothing, Nothing, Nothing )
+    PostTemplate    => ( Nothing, Just(t), Nothing, Nothing )
+    ArticleTemplate => ( Nothing, Nothing, Just(t), Nothing )
+    Unknown         => ( Nothing, Nothing, Nothing, Just(t) )
 
 generatePostsTitles: (List (Maybe Template)) -> (List Post) -> String
 generatePostsTitles postTemplates posts = do
@@ -84,17 +51,27 @@ generate _ [] _ = putStrLn "No posts"
 generate _ _ [] = putStrLn "No templates"
 generate cwd posts templates = do
   let root = cwd ++ (String.singleton dirSeparator)
-  let (indexes, postTemplates, articleTemplates) = unzipWith3 unzipTemplate templates
+  let ( indexes
+      , postTemplates
+      , articleTemplates
+      , unknown ) = unzipWith4 unzipTemplate templates
 
   generatePosts articleTemplates posts
 
   case (catMaybes indexes) of
-    [] => putStrLn "Missing index template"
+    [] => putStrLn "Warning: Missing index template"
     i::xs => do
-      putStrLn $ "processing Index: " ++ i.fname
+      putStrLn $ "processing template: " ++ i.fname
       let postsString = generatePostsTitles postTemplates posts
           pr = strReplace "{{ posts }}" postsString i.text
       succ <- writeFile i.fname pr
+      pure ()
+
+  case (catMaybes unknown) of
+    [] => pure ()
+    i::xs => do
+      putStrLn $ "processing unknown template: " ++ i.fname
+      succ <- writeFile i.fname i.text
       pure ()
 
   putStrLn "complete"

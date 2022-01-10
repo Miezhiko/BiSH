@@ -1,5 +1,10 @@
 module Types
 
+import Utils
+
+import Data.String
+import Data.List1
+
 -- import JSON
 -- import Generics.Derive
 
@@ -25,7 +30,12 @@ record Post where
 export
 post : (String, String) -> Post
 post (fn, ft) =
-  MkPost fn ft "" Article
+  let extensions = reverse $ split (== '.') fn
+      text = case toLower (head extensions) of
+              -- TODO: call some md to html here (pandoc?)
+              "md" => "<p>\n" ++ ft ++ "\n      </p>"
+              _     => ft
+  in MkPost fn text "" Article
 
 public export
 data TemplateType = IndexTemplate | PostTemplate | ArticleTemplate | Unknown
@@ -48,4 +58,8 @@ template (fn, ft) =
     "index.html.hbs"    => MkTemplate "index.html" ft IndexTemplate
     "post.html.hbs"     => MkTemplate "" ft PostTemplate
     "article.html.hbs"  => MkTemplate "" ft ArticleTemplate
-    _                   => MkTemplate fn ft Unknown
+    _ =>  let extensions = reverse $ split (== '.') fn
+              someF = case toLower (head extensions) of
+                        "hbs" => strReplace ".hbs" "" fn
+                        _     => fn
+          in MkTemplate someF ft Unknown
