@@ -1,3 +1,13 @@
+*.o
+*.exe
+*.hi
+*.chi
+*.chs.h
+*.lock
+
 /build/
 /bish/
+
 *.html
+
+hake
