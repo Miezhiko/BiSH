@@ -10,7 +10,8 @@ import Data.List1
 
 %language ElabReflection
 
-%default total
+-- strReplace is not total due recursive path
+-- %default total
 
 export
 data PostType = Article | Other
